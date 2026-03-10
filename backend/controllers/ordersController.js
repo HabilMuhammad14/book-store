@@ -3,7 +3,7 @@ import pool from '../config/db.js';
 const createOrder = async (req, res) =>{
     const {customer_name, address, phone, total_price, items} = req.body;
     try{
-        const result = await pool.query("INSERT INTO orders(customer_name, address, phone, total_price) VALUES($1, $2, $3, $$", [customer_name, address, phone, total_price])
+        const result = await pool.query("INSERT INTO orders(customer_name, address, phone, total_price) VALUES($1, $2, $3, $4) RETURNING id", [customer_name, address, phone, total_price])
         const orderId = result.rows[0].id
         for (const item of items) {
               await pool.query(
@@ -17,13 +17,15 @@ const createOrder = async (req, res) =>{
             message: 'Pesanan Berhasil Dibuat',
             data: result.rows[0]
         })
+        console.log(req.body)
     }catch(err){
+        console.log(err)
         res.status(500).json({ message: 'Gagal membuat order', error: err.message })
     }
 }
 const getOrders = async (req, res) =>{
     try{
-        const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC RETURNING *');
+        const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
         const orders = await Promise.all(
         result.rows.map(async (order) => {
           const itemsResult = await pool.query(
